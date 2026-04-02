@@ -1,0 +1,61 @@
+specification {
+  element person
+  element softwareSystem
+  element container
+  element database
+}
+
+model {
+
+  user = person 'Пользователь' {
+    description 'Конечный пользователь веб-приложения'
+  }
+
+  webApp = softwareSystem 'Веб-приложение' {
+    description 'Клиент-серверное приложение на React и Next.js'
+
+    nextWebClient = container 'Next.js клиент' 'UI, SSR и клиентская логика' 'Next.js, React, TypeScript' {
+      link ../generated/nextWebClient 'Код лежит тут'
+
+      description 'Страницы, React-компоненты, навигация; вызовы backend по HTTPS'
+    }
+
+    backendApi = container 'Backend API' 'HTTP API и серверная логика' 'HTTP/JSON, Node.js' {
+      link ../generated/backendApi 'Код лежит тут'
+      link ./backend/api.tsp 'Контракт API (TypeSpec)'
+
+      description 'Реализуется как Next.js Route Handlers / Server Actions в том же деплое или как отдельный backend-сервис. Спецификация API: specs/backend/api.tsp'
+    }
+
+    appDatabase = database 'Хранилище данных' 'Персистентные данные' 'PostgreSQL' {
+      link ./backend/database.tsp 'Схема БД (TypeSpec)'
+
+      description 'Модель таблиц: specs/backend/database.tsp'
+    }
+
+    nextWebClient -> backendApi 'HTTPS / JSON'
+    backendApi -> appDatabase 'Читает и записывает'
+  }
+
+  user -> webApp 'Использует'
+  user -> webApp.nextWebClient 'Взаимодействует с интерфейсом'
+}
+
+views {
+
+  view context {
+    title 'Контекст (C4 Level 1)'
+    description 'Пользователь и граница программной системы'
+    include user -> webApp
+    autoLayout LeftRight
+  }
+
+  view containers of webApp {
+    title 'Контейнеры (C4 Level 2)'
+    description 'Клиент на Next.js/React, API и база данных'
+    include user -> nextWebClient
+    include nextWebClient -> backendApi
+    include backendApi -> appDatabase
+    autoLayout LeftRight
+  }
+}
